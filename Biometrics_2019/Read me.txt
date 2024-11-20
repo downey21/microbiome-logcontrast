@@ -1,0 +1,46 @@
+This set of codes are used for reproducing all the simulations in the paper and real data application.
+
+Simulation part:
+
+The main script is run_simulation.m which is used to generate the data and estimate the parameters using the proposed method in the paer.
+
+Within the parallel.m, two main functions are used: 
+1. biased_estimate_BIC
+2. debiased_cvx
+where the first one is used to obtain the original Lasso estimator with tuning parameter selected by the extended BIC and the second one is the de-biased procedure proposed in the paper. 
+
+get_MCC_all.m is used to generate the tables in the paper.
+
+The R code is used to generate the plots. 
+1. plots.R is used to generate the plots in the paper which includes coverage probability and average length.
+2. plots_more.R is used to generate more plots which are not included in the paper. 
+
+
+Notice:
+1. To reproduce the result, one should first creat folders named as: simulation data, simulation result.
+2. Before running to code in run_simulation.m, one need to first set the path to the folder where run_simulation.m is in.
+3. In parallel.m, the number of cores used in parallel computing should be changed according to the PC used (can use parcluster function to check the number of local clusters).
+
+
+For real data application part:
+
+The code used for IBD data analysis is in the folder "IBD data analysis". The data used in our analysis is saved in IBD.csv and the IBD.mat, IBD_bac_name.mat are two matlab data files that store the data and bacteria names.
+
+The main scripts are IBD_data_analysis.m and IBD_data_analysis_multi.m. The first one is used to perform analysis on the IBD dataset using single constraint and the second one is used for analysis using multiple constraint.
+
+The allplot.m and allplots_multi.m files are used to preprocess data which will used later to generate the plots in the paper. The first one uses single constraint and the second one uses multiple constraints. 
+
+The stability.m and stability_multi.m files are used to perform stability analysis. 
+
+As for the R file, plots_IBD.R file is used to generate the plots in the paper and get_multiconstraint.R is used to generate the multiple constraints matrix. 
+
+The code used for sensitivity analysis of the IBD data is in the folder "IBD data analysis_sensitivity".
+
+
+Notice:
+1. Before running to code in the folder "IBD data analysis", one need to first set the path to the folder where the parallel.m is in.
+2. To reproduce the result, one should first creat folders named as: plots, results.
+3. In IBD_data_analysis.m, IBD_data_analysis_multi.m, the number of cores used in parallel computing should be changed according to the PC used.
+
+
+
