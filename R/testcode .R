@@ -5,7 +5,10 @@
 
 rm(list = ls())
 
-source('ConstrLasso.R')
+source("R/ConstLasso.R")
+
+set.seed(123)
+
 n <- 50
 p <- 100
 s <- 6

@@ -10,7 +10,10 @@ library(Rcpp)
 # solves t(beta)%*%xx%*%beta/2 - t(xy)%*%beta + fac||beta||_1 
 #or ||X%*%bet-y||_2^2/2 + fac||beta||_1 with xx=crossprod(X), xy=crossprod(x,y)
 # subject to t(cmat)%*%beta=0
-cppFunction('NumericVector ConstrLassoC0(NumericVector betstart, NumericMatrix xx, NumericVector xy, NumericMatrix cmat, double fac, int maxiter, double tol){
+cppFunction('
+#include <random>
+
+NumericVector ConstrLassoC0(NumericVector betstart, NumericMatrix xx, NumericVector xy, NumericMatrix cmat, double fac, int maxiter, double tol){
 int p = xx.nrow();
 int m = cmat.ncol();
 NumericVector bet(p);
@@ -32,6 +35,8 @@ double eps2;
 LogicalVector nonzero(p);
 IntegerVector ind(p);
 
+std::random_device rd;
+std::mt19937 g(rd());
 
 for (int i=0; i<p; i++){
     bet[i] = betstart[i];
@@ -61,7 +66,7 @@ while (eps2>tol & iter2<maxiter){
         for (int i=0; i<p; i++){
             bet_old[i] = bet[i];
         }
-        std::random_shuffle(ind.begin(), ind.end());
+        std::shuffle(ind.begin(), ind.end(), g);
         for (int i=0; i<p; i++){
             k = ind[i];
             if(nonzero[k]){
@@ -230,7 +235,7 @@ ConstrLassoCrossVal <- function(y, x, C=NULL, lambda=NULL, nlam=20, intercept=TR
     # fit with all lambda
     res.fit <- do.call(method, list(y=y, x=x, C=C, lambda=lambda, intercept=FALSE, scaling=FALSE, maxiter=maxiter, tol=tol))
     bet <- res.fit$bet
-    rownames(bet) <- colnames(xmat)
+    rownames(bet) <- colnames(x)
     if (scaling){
         bet <- bet/x.sd
     }
