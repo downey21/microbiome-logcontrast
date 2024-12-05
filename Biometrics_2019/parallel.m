@@ -2,7 +2,8 @@ function [filename2] = parallel(penalize,n,p,nsim, seed, setting, constr,mu,leve
 
 filename =  [pwd,'/simulation data/data_n', num2str(n), '_p', num2str(p), '_seed', num2str(seed), setting ,'.mat'];
 filename2 = [pwd,'/simulation result/res_', suffix,'_n',num2str(n), '_p', num2str(p),'_seed',num2str(seed),setting, '.mat'];
-load(filename);   
+S = load(filename);
+dataset = S.dataset; 
 
 if (sum(abs(constr))==0)
         constr5 = constr;

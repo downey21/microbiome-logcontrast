@@ -1,4 +1,4 @@
-% cd ... set to correct folder
+cd("/Users/dahunseo/programming/microbiome-logcontrast/Biometrics_2019");
 %%parameter setup
 nsim =100;
 %rho =1; mu =1; default =1e-6; tolerance1 = 1e-4; tolerance2 = 1e-6;

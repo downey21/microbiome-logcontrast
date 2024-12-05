@@ -46,7 +46,7 @@ if intercept ==1  %include intercept
         end
     end
     beta = [beta_0 ; beta];
-    file1 = [pwd,'/data_n', num2str(n), '_p', num2str(p),'_seed', num2str(seed),'_sim','_zeta', num2str(zeta),'.mat'];
+    file1 = [pwd,'/simulation data/data_n', num2str(n), '_p', num2str(p),'_seed', num2str(seed),'_sim','_zeta', num2str(zeta),'.mat'];
     save(file1 ,'beta','dataset');
 else   % do not include intercept
     for i = 1:nsim
@@ -67,7 +67,7 @@ else   % do not include intercept
         temp.y = binornd(1,prob1)'; 
         dataset{i} = temp;
     end
-    file1 = [pwd,'/data/data_n', num2str(n), '_p', num2str(p), '_zeta', num2str(zeta), '_seed', num2str(seed) ,'.mat'];
+    file1 = [pwd,'/simulation data/data_n', num2str(n), '_p', num2str(p), '_zeta', num2str(zeta), '_seed', num2str(seed) ,'.mat'];
     save(file1 ,'beta', 'dataset');
 end
 
