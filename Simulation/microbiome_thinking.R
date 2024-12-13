@@ -1,13 +1,5 @@
 
-set.seed(42)
-n <- 1
-size <- 10
-prob <- c(0.3, 0.5, 0.2)
-result <- stats::rmultinom(n, size, prob)
-print(result)
-
-
-
+# -*- encoding: utf-8 -*-
 
 set.seed(48105)
 n <- 500
@@ -45,4 +37,3 @@ plot_hist_with_density <- function(data, omega_inv) {
 }
 
 plot_hist_with_density(data = Y, omega_inv = Omega_inv)
-

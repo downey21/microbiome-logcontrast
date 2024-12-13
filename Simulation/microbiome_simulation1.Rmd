@@ -1,0 +1,230 @@
+---
+title: "Microbiome Data Simulation"
+author: "Dahun Seo"
+date: "2024-12-11"
+geometry: "top=2cm, bottom=2cm, left=2.5cm, right=2.5cm"
+header-includes:
+# - \usepackage[hangul]{kotex}
+# - \setmainhangulfont{나눔고딕}
+- \setmainfont{Microsoft Sans Serif}
+output:
+  pdf_document: 
+    latex_engine: xelatex
+    highlight: zenburn
+    toc: true
+    toc_depth: 2
+    number_sections: true
+  html_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, collapse = T, comment = "#>")
+knitr::opts_chunk$set(tidy.opts = list(width.cutoff = 50), tidy = TRUE)
+options(tibble.print_min = 4L, tibble.print_max = 4L)
+```
+
+```{r message=FALSE, results="hide", include=FALSE}
+rm(list = ls())
+```
+
+```{r message=FALSE, include=FALSE}
+suppressPackageStartupMessages({
+    library(MASS)
+    library(dirmult)
+    library(ape)
+})
+
+source("/Users/dahunseo/programming/microbiome-logcontrast/Simulation/functions.R")
+source("/Users/dahunseo/programming/microbiome-logcontrast/Biometrika_2014/ConstLasso.R")
+```
+
+# Data Generation
+
+## The logistic normal (LN) distribution
+
+- generate random binary tree with $p$ variables
+- calculate cophenetic distanace between variables
+- define variance-covariance matrix using distance matrix
+\[
+    \Sigma_{ij} = \exp(-d_{ij}) / 2
+\]
+- generate data from multivariate normal distribution
+\[
+    M_i \sim \mathcal{N}_p(\alpha_0, \Sigma)
+\]
+- transformation
+\[
+    Z_{ij} = \log \left(  \frac{\exp(M_{ij})}{\sum_{j=1}^p \exp(M_{ij})} \right)
+\]
+- generate outcome variable
+\[
+    Y_i = \beta_0 + Z_i^\intercal \beta + \varepsilon
+\]
+where $\varepsilon \sim \mathcal{N}(0, \sigma^2)$.
+
+```{r}
+set.seed(1234)
+
+# The logistic normal (LN) distribution
+n <- 50            # n: sample size
+p <- 25             # p: number of features
+noise_sigma <- 1    # noise_sigma: noise level for response
+
+# parameters for normal distribution
+# base_mu <- rep(0, p)
+
+# parameters for normal distribution
+# Some taxa are often significantly more abundant than others, as commonly seen in real microbiome compositional data.
+base_mu <- c(rep(p/2, 5), rep(1, p-5)) 
+
+# Create a random binary tree for the p features
+random_tree <- ape::rcoal(p)
+```
+
+```{r fig.align="center", fig.width=8, fig.height=8}
+tree_info <- create_tree_structure(tips = 1:p, edges = random_tree$edge)
+tree_info$levels
+
+g <- igraph::graph_from_edgelist(random_tree$edge, directed = FALSE)
+
+layout <- igraph::layout_as_tree(g, root = tree_info$levels[[length(tree_info$levels)]], mode = "out")
+
+plot(g,
+    layout = layout,
+    vertex.label = igraph::V(g)$name,  
+    vertex.size = 5,
+    vertex.label.cex = 0.8,         
+    vertex.color = "skyblue", 
+    edge.color = "black"
+)
+```
+
+```{r}
+# Compute the distance matrix using cophenetic distances
+dist_matrix <- stats::cophenetic(random_tree)
+
+# variance-covariance setting
+sigma <- exp(-dist_matrix) / 2
+
+# calculate mu for each i
+mu_matrix <- matrix(NA, n, p)
+for (i in 1:n) {
+    mu_matrix[i, ] <- base_mu
+}
+
+# generation of logistic normal samples
+z <- matrix(NA, n, p)
+for (i in 1:n) {
+    normal_sample <- MASS::mvrnorm(1, mu_matrix[i, ], sigma)
+    exp_sample <- exp(normal_sample)
+    z[i, ] <- exp_sample / sum(exp_sample)
+}
+
+# label
+colnames(z) <- paste0("x", 1:p)
+
+# add the psudeo-count 0.5
+z <- ifelse(z == 0, 0.5, z)
+```
+
+```{r}
+# check
+head(z)
+apply(z, 1, sum)
+```
+
+```{r}
+# log transformation
+log_z <- log(z)
+
+# coefficients
+beta_non_zero <-
+    c(
+        -3, 3, 2.5, -1, -1.5,
+        3, 3, -2, -2, -2,
+        1, -1, 3, -2, -1
+    )
+
+if (length(beta_non_zero) >= p) {
+    beta <- beta_non_zero[1:p]
+} else {
+    beta <- c(beta_non_zero, rep(0, p - length(beta_non_zero)))
+}
+
+base_y <- rep(100, n)
+
+y <- base_y + as.vector(log_z %*% beta) + stats::rnorm(n, 0, sd = noise_sigma)
+```
+
+\clearpage
+
+# Simulation Study Results
+
+## Original
+
+```{r fig.align="center", out.width="60%"}
+expanded_z <- construct_features(z, tips = 1:p, edges = random_tree$edge, eta = 0, tau = 1)
+
+C <- matrix(1, p, ncol = 1)
+
+res2 <- ConstrLassoCrossVal(y = y, x = log_z, C = C, nfolds = 10)
+
+plot(res2$cvm)
+
+res2$bet.sel
+t(C) %*% res2$bet.sel
+
+res2$cvm[res2$sel]
+res2$Rsq.sel
+
+{plot(
+    beta, res2$bet.sel,
+    xlab = "true beta", 
+    ylab = "estimated beta",
+    pch = 16,
+    col = "blue",
+    asp = 1
+)
+abline(a = 0, b = 1, col = "red", lty = 2, lwd = 2)}
+
+{plot(
+    y, log_z %*% res2$bet.sel + res2$int.sel,
+    xlab = "true y", 
+    ylab = "y hat",
+    pch = 16,
+    col = "blue",
+    asp = 1
+)
+abline(a = 0, b = 1, col = "red", lty = 2, lwd = 2)}
+```
+
+\clearpage
+
+## Expanded
+
+```{r fig.align="center", out.width="60%"}
+head(expanded_z$data)
+
+res3 <- ConstrLassoCrossVal(y = y, x = expanded_z$data, C = expanded_z$C, nfolds = 10)
+
+plot(res3$cvm)
+
+res3$bet[, which.min(res3$cvm)]
+
+t(expanded_z$C) %*% res3$bet[, which.min(res3$cvm)]
+
+res3$cvm[res3$sel]
+res3$Rsq.sel
+
+{plot(
+    y, expanded_z$data %*% res3$bet.sel + res3$int.sel,
+    xlab = "true y", 
+    ylab = "y hat",
+    pch = 16,
+    col = "blue",
+    asp = 1
+)
+abline(a = 0, b = 1, col = "red", lty = 2, lwd = 2)}
+```

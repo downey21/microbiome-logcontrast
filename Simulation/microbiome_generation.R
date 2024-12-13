@@ -8,7 +8,8 @@ library(dirmult)
 
 # Following settings in
 # A fast small‐sample kernel independence test for microbiome community‐level association analysis, Biometrics (2017)
-# Compositional knockoff filter for high‐dimensional regression analysis of microbiome data, Biometrics (2021)
+# Compositional knockoff filter for high‐dimensional regression analysis of microbiome data, Biometrics (2021) 에서 위 논문 DM follow.
+# (The first scheme was to generate microbiome counts from the Dirichlet-multinomial (DM) distribution following a previous design (Zhan et al., 2017).)
 
 # The Dirichlet-multinomial (DM) distribution
 n <- 20            # n: sample size

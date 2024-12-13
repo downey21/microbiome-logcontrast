@@ -5,7 +5,7 @@
 
 rm(list = ls())
 
-source("R/ConstLasso.R")
+source("/Users/dahunseo/programming/microbiome-logcontrast/Biometrika_2014/ConstLasso.R")
 
 set.seed(123)
 
@@ -28,4 +28,5 @@ t(C)%*%res1$bet
 res2 <- ConstrLassoCrossVal(y=y,x=x,C=C)
 t(C)%*%res1$bet
 plot(bet0,res2$bet[,which.min(res2$cvm)])
+abline(a = 0, b = 1, col = "red", lty = 2, lwd = 2)
 plot(res2$cvm)

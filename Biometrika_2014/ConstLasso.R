@@ -3,8 +3,6 @@
 
 # https://github.com/pixushi/constrained_lasso/blob/master/ConstrLasso.R
 
-rm(list = ls())
-
 library(Rcpp)
 
 # solves t(beta)%*%xx%*%beta/2 - t(xy)%*%beta + fac||beta||_1 
@@ -221,7 +219,7 @@ ConstrLassoCrossVal <- function(y, x, C=NULL, lambda=NULL, nlam=20, intercept=TR
     rnum <- sample.int(n)%%nfolds+1
     for (j in 1:nfolds){
         temp <- rnum==j
-        print(j)
+        # print(j)
         ytrain <- y[!temp]
         xtrain <- x[!temp,]
         ytest <- y[temp]
