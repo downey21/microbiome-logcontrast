@@ -4,8 +4,10 @@
 rm(list = ls())
 
 #
-library(ggtree)
-library(ape)
+suppressPackageStartupMessages({
+    library(ggtree)
+    library(ape)
+})
 
 set.seed(123)
 
@@ -110,8 +112,6 @@ for (h in seq_len(height_length)) {
 }
 g$data$level <- factor(g$data$level, levels = 1:height_length)
 
-
-
 palette_function <- colorRampPalette(RColorBrewer::brewer.pal(n = min(height_length, 8), name = "Set1"))
 colors <- palette_function(height_length)
 
@@ -138,8 +138,6 @@ g$data$label_text <- NA
 g$data$label_text[g$data$node == 1] <- "A"
 g$data$label_text[g$data$node == 2] <- "B"
 g$data$label_text[g$data$node == 3] <- "C"
-
-
 g$data$label_text[g$data$node == 4] <- "D"
 
 g$data$label_text[is.na(g$data$label_text)] <- ""
@@ -233,9 +231,3 @@ g +
     ggrepel::geom_text_repel(aes(label = label_text), size = 4, box.padding = 0.3, point.padding = 0.5) +
     ggtree::theme(legend.position = "right") +
     ggplot2::labs(fill = "Level")
-
-
-
-
-
-

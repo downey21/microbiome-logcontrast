@@ -5,6 +5,11 @@ rm(list = ls())
 
 source("/Users/dahunseo/programming/microbiome-logcontrast/Simulation/functions.R")
 
+suppressPackageStartupMessages({
+    library(ggtree)
+    library(ape)
+})
+
 set.seed(1234)
 
 # The logistic normal (LN) distribution
@@ -102,23 +107,52 @@ base_y <- rep(100, n)
 
 y <- base_y + beta_treatment * treatment + beta_sex * sex + beta_age * age + as.vector(log_z %*% beta) + stats::rnorm(n, 0, sd = noise_sigma)
 
+# tree_info <- create_tree_structure(tips = 1:p, edges = random_tree$edge)
+# tree_info$levels
 
+# g <- igraph::graph_from_edgelist(random_tree$edge, directed = FALSE)
 
+# layout <- igraph::layout_as_tree(g, root = tree_info$levels[[length(tree_info$levels)]], mode = "out")
+
+# plot(g,
+#     layout = layout,
+#     vertex.label = igraph::V(g)$name,  
+#     vertex.size = 5,         
+#     vertex.color = "skyblue", 
+#     edge.color = "black"
+# )
+
+g <- ggtree::ggtree(random_tree, layout = "circular", branch.length="none", color = "black", size = 0.5, linetype = 1, alpha = 0.3)
 
 tree_info <- create_tree_structure(tips = 1:p, edges = random_tree$edge)
 tree_info$levels
 
-g <- igraph::graph_from_edgelist(random_tree$edge, directed = FALSE)
+height_length <- length(tree_info$levels)
 
-layout <- igraph::layout_as_tree(g, root = tree_info$levels[[length(tree_info$levels)]], mode = "out")
+g$data$level <- NA
+for (h in seq_len(height_length)) {
+    nodes <- tree_info$levels[[h]]
+    g$data$level[g$data$node %in% nodes] <- h
+}
+g$data$level <- factor(g$data$level, levels = 1:height_length)
 
-plot(g,
-    layout = layout,
-    vertex.label = igraph::V(g)$name,  
-    vertex.size = 5,         
-    vertex.color = "skyblue", 
-    edge.color = "black"
-)
+palette_function <- colorRampPalette(RColorBrewer::brewer.pal(n = min(height_length, 8), name = "Set1"))
+colors <- palette_function(height_length)
+
+g$data$label_text <- g$data$node
+g$data$level_label <- factor(as.numeric(as.character(g$data$level)) - 1)
+g$data$alpha_value <- 1
+
+g +
+    ggtree::geom_tippoint(aes(fill = level_label, alpha = alpha_value), size = 4, alpha = 0.9, shape = 21, stroke = 0.5) +
+    ggtree::geom_nodepoint(aes(fill = level_label, alpha = alpha_value), size = 4, alpha = 0.9, shape = 21, stroke = 0.5) +
+    ggtree::scale_fill_manual(
+        values = colors,
+        drop = FALSE
+    ) +
+    ggrepel::geom_text_repel(aes(label = label_text), size = 4, box.padding = 0.3, point.padding = 0.5, segment.linetype = "dotted", segment.alpha = 0.2) +
+    ggtree::theme(legend.position = "right") +
+    ggplot2::labs(fill = "Level")
 
 expanded_z <- construct_features(z, tips = 1:p, edges = random_tree$edge, eta = 0, tau = 1)
 
