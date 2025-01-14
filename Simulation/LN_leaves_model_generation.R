@@ -14,7 +14,7 @@ set.seed(1234)
 
 # The logistic normal (LN) distribution
 n <- 100            # n: sample size
-p <- 70             # p: number of features
+p <- 30             # p: number of features
 noise_sigma <- 1    # noise_sigma: noise level for response
 
 # covariate generation
@@ -105,27 +105,28 @@ beta_age <- 0
 beta_treatment <- 0
 base_y <- rep(100, n)
 
-y <- base_y + beta_treatment * treatment + beta_sex * sex + beta_age * age + as.vector(log_z %*% beta) + stats::rnorm(n, 0, sd = noise_sigma)
-
-# tree_info <- create_tree_structure(tips = 1:p, edges = random_tree$edge)
-# tree_info$levels
-
-# g <- igraph::graph_from_edgelist(random_tree$edge, directed = FALSE)
-
-# layout <- igraph::layout_as_tree(g, root = tree_info$levels[[length(tree_info$levels)]], mode = "out")
-
-# plot(g,
-#     layout = layout,
-#     vertex.label = igraph::V(g)$name,  
-#     vertex.size = 5,         
-#     vertex.color = "skyblue", 
-#     edge.color = "black"
-# )
-
-g <- ggtree::ggtree(random_tree, layout = "circular", branch.length="none", color = "black", size = 0.5, linetype = 1, alpha = 0.3)
+expanded_z <- construct_features(z, tips = 1:p, edges = random_tree$edge, eta = 0, tau = 2)
 
 tree_info <- create_tree_structure(tips = 1:p, edges = random_tree$edge)
-tree_info$levels
+
+non_zero_parent <- sample_non_zero_parent(tree_info, tau = 0, n_per_level = 2)
+
+beta <- setNames(rep(0, length(colnames(expanded_z$data))), gsub("^.+_x", "", colnames(expanded_z$data)))
+
+for (i in non_zero_parent) {
+    update_indices <- as.character(tree_info$children[[i]])
+    length <- length(update_indices)
+    values <- generate_beta_vector(length)
+
+    beta[update_indices] <- values
+}
+
+non_zero_node <- as.numeric(names(beta[beta != 0]))
+names(beta) <- colnames(expanded_z$data)
+
+y <- base_y + beta_treatment * treatment + beta_sex * sex + beta_age * age + as.vector(expanded_z$data %*% beta) + stats::rnorm(n, 0, sd = noise_sigma)
+
+g <- ggtree::ggtree(random_tree, layout = "circular", branch.length="none", color = "black", size = 0.5, linetype = 1, alpha = 0.3)
 
 height_length <- length(tree_info$levels)
 
@@ -141,20 +142,20 @@ colors <- palette_function(height_length)
 
 g$data$label_text <- g$data$node
 g$data$level_label <- factor(as.numeric(as.character(g$data$level)) - 1)
-g$data$alpha_value <- 1
+g$data$alpha_value <- 0.3
+g$data$alpha_value[g$data$node %in% non_zero_node] <- 1
 
 g +
-    ggtree::geom_tippoint(aes(fill = level_label, alpha = alpha_value), size = 4, alpha = 0.9, shape = 21, stroke = 0.5) +
-    ggtree::geom_nodepoint(aes(fill = level_label, alpha = alpha_value), size = 4, alpha = 0.9, shape = 21, stroke = 0.5) +
+    ggtree::geom_tippoint(aes(fill = level_label, alpha = alpha_value), size = 4, shape = 21, stroke = 0.5) +
+    ggtree::geom_nodepoint(aes(fill = level_label, alpha = alpha_value), size = 4, shape = 21, stroke = 0.5) +
     ggtree::scale_fill_manual(
         values = colors,
         drop = FALSE
     ) +
-    ggrepel::geom_text_repel(aes(label = label_text), size = 4, box.padding = 0.3, point.padding = 0.5, segment.linetype = "dotted", segment.alpha = 0.2) +
+    ggrepel::geom_text_repel(aes(label = label_text, alpha = alpha_value), size = 4, box.padding = 0.3, point.padding = 0.5, segment.linetype = "dotted", segment.alpha = 0.2) +
     ggtree::theme(legend.position = "right") +
-    ggplot2::labs(fill = "Level")
-
-expanded_z <- construct_features(z, tips = 1:p, edges = random_tree$edge, eta = 0, tau = 1)
+    ggplot2::labs(fill = "Level") +
+    ggplot2::guides(alpha = "none")
 
 source("/Users/dahunseo/programming/microbiome-logcontrast/Biometrika_2014/ConstLasso.R")
 

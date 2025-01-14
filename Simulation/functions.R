@@ -125,3 +125,50 @@ construct_features <- function(x, tips, edges, eta = 0, tau = NULL) {
     
     return(list(data = expanded_features, C = C))
 }
+
+generate_beta_vector <- function(length) {
+
+    values <- seq(-2, 2, by = 0.25)
+    values <- values[values != 0]
+
+    if (length == 1) {
+        output <- c(sample(values, 1, replace = TRUE))
+    } else {
+        selected_values <- sample(values, length - 1, replace = TRUE)
+        last_value <- -sum(selected_values)
+
+        output <- c(selected_values, last_value)
+    }
+
+    return(output)
+}
+
+sample_with_exclusion <- function(level, exclude, n) {
+    candidates <- setdiff(level, exclude)
+    if (length(candidates) == 0) {
+        return(integer(0))
+    } else if (length(candidates) < n) {
+        return(candidates)
+    } else {
+        return(sample(candidates, n))
+    }
+}
+
+sample_non_zero_parent <- function(tree_info, tau, n_per_level = 2, seed = NULL) {
+    if (!is.null(seed)) set.seed(seed)
+
+    selected <- c()
+    exclude <- c()
+
+    for (level in rev(2:(tau+2))) {
+        current_level <- tree_info$levels[[level]]
+        sampled <- sample_with_exclusion(current_level, exclude, n_per_level)
+        selected <- c(selected, sampled)
+        
+        for (i in sampled) {
+            exclude <- c(exclude, tree_info$children[[i]])
+        }
+    }
+
+    return(selected)
+}
